@@ -17,6 +17,26 @@ cross-coupling catalytic system for chemistry.
 
 [Follow us](http://ananikovlab.ru)
 
+## Installation
+
+To install this project run the following command:
+
+```bash
+pip install git+https://github.com/gomesgroup/medusa.git
+```
+
+If you prefer an editable version do the following:
+```bash
+git clone https://github.com/gomesgroup/medusa.git
+cd medusa
+pip install -e ".[dev,ml,test]"
+```
+
+To test your installation run:
+```bash
+pytest tests/test_import.py
+```
+
 ## How to use it?
 
 To start with MEDUSA, first, install the required packages running. It is recommended to create new virtual environment
