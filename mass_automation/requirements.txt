@@ -8,6 +8,6 @@ pyteomics==4.7.5
 pytorch_lightning==2.5.1.post0
 scikit_learn==1.6.1
 scipy==1.15.2
-torch==2.7.0
+torch==2.7.1
 torchmetrics==1.7.1
 tqdm==4.66.4
