@@ -7,7 +7,7 @@ from mass_automation.formula.check_formula import del_isotopologues, check_prese
 
 
 def plot_compare(spectrum: Spectrum, formula: Formula, cal_error=0.006,
-                 dist_error=0.003, distance=50, max_peaks=5, path=None, return_masses=False, show=True):
+                 dist_error=0.003, distance=50, max_peaks=5, path=None, return_masses=False, show=True, font='Arial'):
     """ Spectra comparison visualization.
 
     Parameters
@@ -30,8 +30,8 @@ def plot_compare(spectrum: Spectrum, formula: Formula, cal_error=0.006,
 
     """
 
-    hfont = {'fontname':'Arial', 'fontsize':'12'}
-    sfont = {'fontname': 'Arial', 'fontsize': '9'}
+    hfont = {'fontname': font, 'fontsize':'12'}
+    sfont = {'fontname': font, 'fontsize': '9'}
     teor_masses, teor_ints = formula.isodistribution()
     teor_masses, teor_ints = del_isotopologues(teor_masses, teor_ints)
     #import ipdb; ipdb.set_trace()
@@ -54,6 +54,8 @@ def plot_compare(spectrum: Spectrum, formula: Formula, cal_error=0.006,
     ax1.plot([x_left, x_right], [0, 0])
     ax1.set_ylim(0, 1.1)
     ax1.set_xticks(xticks)
+    ax1.yaxis.set_major_formatter(plt.ScalarFormatter(useMathText=True))
+    ax1.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     ax1.annotate("Calculated ",
                  (x_right, teor_ints.max()), weight='bold', ha='right', **hfont)
 
@@ -67,6 +69,8 @@ def plot_compare(spectrum: Spectrum, formula: Formula, cal_error=0.006,
     plot_slice_max = spectrum.ints[plot_slice_condition].max()
     ax2.set_ylim(0, 1.1 * plot_slice_max)
     ax2.set_xticks(xticks)
+    ax2.yaxis.set_major_formatter(plt.ScalarFormatter(useMathText=True))
+    ax2.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     ax1.set_xlabel("m/z", **hfont)
     ax2.annotate("Experimental ", (x_right, plot_slice_max), ha='right', weight='bold', **hfont)
     ax2.annotate(r"$\Delta$" + f" = {round(mass_delta, 2)} ppm ",

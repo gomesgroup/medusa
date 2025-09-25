@@ -84,6 +84,9 @@ def plot_spectrum(spectrum: Spectrum, drawtype='plot', x_left=None, x_right=None
         raise ValueError('Incorrect drawing type')
 
     plt.ylim(0, y_max + 0.1 * y_max)
+    
+    # Use scientific notation for y-axis
+    plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 
     if labels is not None:
         slice_labels = labels[(masses >= x_left) & (masses <= x_right)]

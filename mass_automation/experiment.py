@@ -3,11 +3,11 @@ from __future__ import annotations
 import os
 import pickle as pkl
 from pathlib import Path
-from typing import Optional, Callable, Hashable
+from typing import Optional, Callable, Hashable, List, Union
 
 import numpy as np
 import pandas as pd
-from pyopenms import MSExperiment, MzXMLFile
+from pyopenms import MSExperiment, MzXMLFile, MzMLFile, MSSpectrum
 from tqdm.autonotebook import tqdm
 
 from .utils import lorentzian
@@ -287,12 +287,160 @@ class Experiment:
                 self.spectra_ints.append(peaks_int)
 
         elif format == 'mzML':
-            raise NotImplementedError
+            exp = MSExperiment()
+            MzMLFile().load(path, exp)
+            
+            for spectrum in tqdm(exp.getSpectra(), disable=(not verbose)):
+                peaks_val, peaks_int = spectrum.get_peaks()
+                self.spectra_mass.append(peaks_val)
+                self.spectra_ints.append(peaks_int)
+                
+        elif format == 'numpy':
+            # Load directly from NumPy arrays
+            # Expects a directory with masses.npy and intensities.npy files
+            try:
+                # Try loading arrays saved as a list of arrays
+                masses_path = os.path.join(path, 'masses.npy')
+                ints_path = os.path.join(path, 'intensities.npy')
+                
+                if os.path.exists(masses_path) and os.path.exists(ints_path):
+                    numpy_masses = np.load(masses_path, allow_pickle=True)
+                    numpy_ints = np.load(ints_path, allow_pickle=True)
+                    if numpy_masses.ndim == 1:
+                        numpy_masses = numpy_masses.reshape(1, -1)
+                    if numpy_ints.ndim == 1:
+                        numpy_ints = numpy_ints.reshape(1, -1)
+                    self.spectra_mass = list(numpy_masses)
+                    self.spectra_ints = list(numpy_ints)
+                else:
+                    # Try loading individual spectrum files
+                    i = 0
+                    while True:
+                        m_path = os.path.join(path, f'masses_{i}.npy')
+                        i_path = os.path.join(path, f'intensities_{i}.npy')
+                        
+                        if os.path.exists(m_path) and os.path.exists(i_path):
+                            self.spectra_mass.append(np.load(m_path).reshape(1, -1))
+                            self.spectra_ints.append(np.load(i_path).reshape(1, -1))
+                            i += 1
+                        else:
+                            break
+                    
+                    if i == 0:
+                        raise FileNotFoundError(f"No NumPy array files found in {path}")
+            except Exception as e:
+                raise ValueError(f"Error loading NumPy arrays from {path}: {str(e)}")
 
         else:
-            raise ValueError
+            raise ValueError(f"Unsupported format: {format}. Use 'mzXML', 'mzML', or 'numpy'")
 
         self.len = len(self.spectra_mass)
+    
+    @staticmethod
+    def save_as_mzxml(spectra_mass: List[np.ndarray], spectra_ints: List[np.ndarray], 
+                    output_path: str) -> None:
+        """
+        Save mass spectrometry data as mzXML file.
+        
+        Parameters
+        ----------
+        spectra_mass : List[np.ndarray]
+            List of mass arrays for each spectrum
+        spectra_ints : List[np.ndarray]
+            List of intensity arrays for each spectrum
+        output_path : str
+            Path to save the mzXML file
+        """
+        if len(spectra_mass) != len(spectra_ints):
+            raise ValueError("Length of spectra_mass and spectra_ints must be the same")
+            
+        # Create MSExperiment object
+        exp = MSExperiment()
+        
+        # Add each spectrum to the experiment
+        for i, (masses, intensities) in enumerate(zip(spectra_mass, spectra_ints)):
+            spectrum = MSSpectrum()
+            spectrum.setRT(float(i))  # Set retention time (can be scan number)
+            spectrum.setMSLevel(1)    # MS level 1
+            
+            # Set peaks data
+            spectrum.set_peaks((masses, intensities))
+            
+            # Add spectrum to experiment
+            exp.addSpectrum(spectrum)
+        
+        # Save experiment to mzXML file
+        MzXMLFile().store(output_path, exp)
+        print(f"MS data saved as mzXML: {output_path}")
+    
+    @staticmethod
+    def save_as_mzml(spectra_mass: List[np.ndarray], spectra_ints: List[np.ndarray], 
+                    output_path: str) -> None:
+        """
+        Save mass spectrometry data as mzML file.
+        
+        Parameters
+        ----------
+        spectra_mass : List[np.ndarray]
+            List of mass arrays for each spectrum
+        spectra_ints : List[np.ndarray]
+            List of intensity arrays for each spectrum
+        output_path : str
+            Path to save the mzML file
+        """
+        if len(spectra_mass) != len(spectra_ints):
+            raise ValueError("Length of spectra_mass and spectra_ints must be the same")
+            
+        # Create MSExperiment object
+        exp = MSExperiment()
+        
+        # Add each spectrum to the experiment
+        for i, (masses, intensities) in enumerate(zip(spectra_mass, spectra_ints)):
+            spectrum = MSSpectrum()
+            spectrum.setRT(float(i))  # Set retention time (can be scan number)
+            spectrum.setMSLevel(1)    # MS level 1
+            
+            # Set peaks data
+            spectrum.set_peaks((masses, intensities))
+            
+            # Add spectrum to experiment
+            exp.addSpectrum(spectrum)
+        
+        # Save experiment to mzML file
+        MzMLFile().store(output_path, exp)
+        print(f"MS data saved as mzML: {output_path}")
+    
+    @staticmethod
+    def save_as_numpy(spectra_mass: List[np.ndarray], spectra_ints: List[np.ndarray], 
+                     output_dir: str) -> None:
+        """
+        Save mass spectrometry data as NumPy arrays.
+        This is a simpler alternative to mzXML/mzML formats.
+        
+        Parameters
+        ----------
+        spectra_mass : List[np.ndarray]
+            List of mass arrays for each spectrum
+        spectra_ints : List[np.ndarray]
+            List of intensity arrays for each spectrum
+        output_dir : str
+            Directory to save the numpy files
+        """
+        if len(spectra_mass) != len(spectra_ints):
+            raise ValueError("Length of spectra_mass and spectra_ints must be the same")
+        
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Save all spectra together in a single file
+        np.save(os.path.join(output_dir, 'masses.npy'), np.array(spectra_mass, dtype=object))
+        np.save(os.path.join(output_dir, 'intensities.npy'), np.array(spectra_ints, dtype=object))
+        
+        # Also save each spectrum individually (useful for single spectrum analysis)
+        for i, (masses, intensities) in enumerate(zip(spectra_mass, spectra_ints)):
+            np.save(os.path.join(output_dir, f'masses_{i}.npy'), masses)
+            np.save(os.path.join(output_dir, f'intensities_{i}.npy'), intensities)
+        
+        print(f"MS data saved as NumPy arrays in: {output_dir}")
 
     def __getitem__(self, item: int) -> Spectrum:
         name = None
