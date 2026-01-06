@@ -9,7 +9,7 @@ attrs==21.4.0
 backcall==0.2.0
 beautifulsoup4==4.11.1
 bleach==5.0.1
-bokeh==2.4.3
+bokeh==3.8.2
 cachetools==5.2.0
 catboost==1.0.6
 certifi==2022.6.15
