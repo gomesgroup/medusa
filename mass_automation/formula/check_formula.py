@@ -172,7 +172,7 @@ def add_new_peak(spectrum, delta, vector, teor_vector, dist_error, distance=1):
     return np.hstack((vector, add_vector)), is_matched
 
 
-def check_presence(spectrum, formula, cal_error=0.006, dist_error=0.003, distance=50, max_peaks=5):
+def check_presence(spectrum, formula, cal_error=0.01, dist_error=0.005, distance=50, max_peaks=5):
     """
     Calculates the cosine distance between the peaks of the theoretical isotope distribution
     and the peaks in their confidence intervals.
@@ -184,15 +184,15 @@ def check_presence(spectrum, formula, cal_error=0.006, dist_error=0.003, distanc
     formula : Formula
         The Formula class of the substance.
     cal_error : float
-        The radius of the first peak' vicinity (default is 0.006).
+        The radius of the first peak' vicinity (default is 0.01).
     dist_error : float
         The possible error in distance between the peaks, characterizes the radius of the second and the next
-        peak's vicinity (default is 0.001).
+        peak's vicinity (default is 0.005).
     distance : int
         The parameter, used in peak finding algorithm. (default is 50).
     max_peaks : int
         Limits the number of possible first peaks (default is 5).
-     
+    
     Returns
     -------
     Tuple[float, np.ndarray, np.ndarray, float, float]
@@ -209,7 +209,7 @@ def check_presence(spectrum, formula, cal_error=0.006, dist_error=0.003, distanc
                                                                                                    first_peak_mass,
                                                                                                    cal_error,
                                                                                                    distance=distance)
-
+    
     if len(pos_first_peak_masses) > max_peaks:
         pos_first_peak_masses = pos_first_peak_masses[np.argsort(pos_first_peak_ints)][::-1][0:max_peaks]
         pos_first_peak_ints = np.sort(pos_first_peak_ints)[::-1][0:max_peaks]
@@ -236,8 +236,12 @@ def check_presence(spectrum, formula, cal_error=0.006, dist_error=0.003, distanc
                 " masses' vector.")
 
         vector_indices[i] = vector
+        print(f"Debug: Observed vector: {vector[1]}, Theoretical vector: {deisotoped_peaks}")
         pos_cosines[i] = cosine(vector[1], deisotoped_peaks)
+        print(f"Debug: Cosine distance for candidate {i}: {pos_cosines[i]}")
         matched_percentages[i] = np.array(mtchd_p_per).mean()
+        print(f"Debug: Matched percentage for candidate {i}: {matched_percentages[i]}")
+
         real_coords = vector_indices[min(pos_cosines, key=pos_cosines.get)]
         mass_delta = abs((real_coords[0] - deisotoped_masses)/deisotoped_masses).mean()*10**6
     return min(pos_cosines.values()), real_coords, \
