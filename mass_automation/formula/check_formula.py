@@ -236,11 +236,11 @@ def check_presence(spectrum, formula, cal_error=0.01, dist_error=0.005, distance
                 " masses' vector.")
 
         vector_indices[i] = vector
-        print(f"Debug: Observed vector: {vector[1]}, Theoretical vector: {deisotoped_peaks}")
+        # print(f"Debug: Observed vector: {vector[1]}, Theoretical vector: {deisotoped_peaks}")
         pos_cosines[i] = cosine(vector[1], deisotoped_peaks)
-        print(f"Debug: Cosine distance for candidate {i}: {pos_cosines[i]}")
+        # print(f"Debug: Cosine distance for candidate {i}: {pos_cosines[i]}")
         matched_percentages[i] = np.array(mtchd_p_per).mean()
-        print(f"Debug: Matched percentage for candidate {i}: {matched_percentages[i]}")
+        # print(f"Debug: Matched percentage for candidate {i}: {matched_percentages[i]}")
 
         real_coords = vector_indices[min(pos_cosines, key=pos_cosines.get)]
         mass_delta = abs((real_coords[0] - deisotoped_masses)/deisotoped_masses).mean()*10**6
