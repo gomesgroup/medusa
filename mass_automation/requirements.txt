@@ -1,4 +1,4 @@
-bokeh==3.7.2
+bokeh==3.8.2
 chemparse==0.3.2
 matplotlib==3.10.1
 numpy==2.2.5
